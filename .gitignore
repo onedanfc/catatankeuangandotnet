@@ -1,0 +1,21 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio files
+*.user
+*.suo
+*.userprefs
+
+# Rider/JetBrains
+.idea/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# Environment and secrets
+.env
+secrets.json
