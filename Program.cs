@@ -80,6 +80,43 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<INotificationService, EmailNotificationService>();
+
+var smtpSection = configuration.GetSection("Smtp");
+var smtpOptions = new SmtpOptions
+{
+    Host = Environment.GetEnvironmentVariable("SMTP_HOST") ?? smtpSection["Host"] ?? string.Empty,
+    Username = Environment.GetEnvironmentVariable("SMTP_USERNAME") ?? smtpSection["Username"] ?? string.Empty,
+    Password = Environment.GetEnvironmentVariable("SMTP_PASSWORD") ?? smtpSection["Password"] ?? string.Empty,
+    FromEmail = Environment.GetEnvironmentVariable("SMTP_FROM_EMAIL") ?? smtpSection["FromEmail"] ?? string.Empty,
+    FromName = Environment.GetEnvironmentVariable("SMTP_FROM_NAME") ?? smtpSection["FromName"] ?? string.Empty
+};
+
+if (int.TryParse(Environment.GetEnvironmentVariable("SMTP_PORT"), out var smtpPort))
+{
+    smtpOptions.Port = smtpPort;
+}
+else if (int.TryParse(smtpSection["Port"], out var configPort))
+{
+    smtpOptions.Port = configPort;
+}
+
+var enableSslSetting = Environment.GetEnvironmentVariable("SMTP_ENABLE_SSL") ?? smtpSection["EnableSsl"];
+if (bool.TryParse(enableSslSetting, out var enableSsl))
+{
+    smtpOptions.EnableSsl = enableSsl;
+}
+
+builder.Services.Configure<SmtpOptions>(options =>
+{
+    options.Host = smtpOptions.Host;
+    options.Port = smtpOptions.Port;
+    options.EnableSsl = smtpOptions.EnableSsl;
+    options.Username = smtpOptions.Username;
+    options.Password = smtpOptions.Password;
+    options.FromEmail = smtpOptions.FromEmail;
+    options.FromName = smtpOptions.FromName;
+});
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();

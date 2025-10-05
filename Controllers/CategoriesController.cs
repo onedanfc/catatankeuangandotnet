@@ -1,10 +1,13 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CatatanKeuanganDotnet.Dtos.Categories;
+using CatatanKeuanganDotnet.Dtos.Common;
 using CatatanKeuanganDotnet.Models;
 using CatatanKeuanganDotnet.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CatatanKeuanganDotnet.Controllers
@@ -26,11 +29,17 @@ namespace CatatanKeuanganDotnet.Controllers
         {
             if (userId <= 0)
             {
-                return BadRequest(new { message = "Parameter userId diperlukan" });
+                return BadRequest(ApiResponse.Failure(
+                    "Parameter userId diperlukan.",
+                    StatusCodes.Status400BadRequest));
             }
 
             var categories = await _categoryService.GetByUserAsync(userId, cancellationToken);
-            return Ok(categories.Select(MapCategory));
+            var data = categories.Select(MapCategory).ToList();
+
+            return Ok(ApiResponse<IEnumerable<CategoryResponse>>.Succeeded(
+                data,
+                "Daftar kategori berhasil diambil."));
         }
 
         [HttpGet("{id:int}")]
@@ -39,10 +48,14 @@ namespace CatatanKeuanganDotnet.Controllers
             var category = await _categoryService.GetByIdAsync(id, cancellationToken);
             if (category == null)
             {
-                return NotFound();
+                return NotFound(ApiResponse.Failure(
+                    "Kategori tidak ditemukan.",
+                    StatusCodes.Status404NotFound));
             }
 
-            return Ok(MapCategory(category));
+            return Ok(ApiResponse<CategoryResponse>.Succeeded(
+                MapCategory(category),
+                "Detail kategori berhasil diambil."));
         }
 
         [HttpPost]
@@ -50,11 +63,25 @@ namespace CatatanKeuanganDotnet.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return ValidationProblem(ModelState);
+                var validationDetails = new ValidationProblemDetails(ModelState)
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Permintaan tidak valid."
+                };
+
+                return BadRequest(ApiResponse<ValidationProblemDetails>.Failure(
+                    "Data kategori tidak valid.",
+                    StatusCodes.Status400BadRequest,
+                    validationDetails));
             }
 
             var category = await _categoryService.CreateAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(GetById), new { id = category.Id }, MapCategory(category));
+            var response = ApiResponse<CategoryResponse>.Succeeded(
+                MapCategory(category),
+                "Kategori berhasil dibuat.",
+                StatusCodes.Status201Created);
+
+            return CreatedAtAction(nameof(GetById), new { id = category.Id }, response);
         }
 
         [HttpPut("{id:int}")]
@@ -62,16 +89,27 @@ namespace CatatanKeuanganDotnet.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return ValidationProblem(ModelState);
+                var validationDetails = new ValidationProblemDetails(ModelState)
+                {
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = "Permintaan tidak valid."
+                };
+
+                return BadRequest(ApiResponse<ValidationProblemDetails>.Failure(
+                    "Data kategori tidak valid.",
+                    StatusCodes.Status400BadRequest,
+                    validationDetails));
             }
 
             var updated = await _categoryService.UpdateAsync(id, request, cancellationToken);
             if (!updated)
             {
-                return NotFound();
+                return NotFound(ApiResponse.Failure(
+                    "Kategori tidak ditemukan.",
+                    StatusCodes.Status404NotFound));
             }
 
-            return NoContent();
+            return Ok(ApiResponse.Succeeded("Kategori berhasil diperbarui."));
         }
 
         [HttpDelete("{id:int}")]
@@ -80,10 +118,12 @@ namespace CatatanKeuanganDotnet.Controllers
             var deleted = await _categoryService.DeleteAsync(id, cancellationToken);
             if (!deleted)
             {
-                return NotFound();
+                return NotFound(ApiResponse.Failure(
+                    "Kategori tidak ditemukan.",
+                    StatusCodes.Status404NotFound));
             }
 
-            return NoContent();
+            return Ok(ApiResponse.Succeeded("Kategori berhasil dihapus."));
         }
 
         private static CategoryResponse MapCategory(Category category) => new()

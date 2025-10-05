@@ -14,5 +14,6 @@ namespace CatatanKeuanganDotnet.Models
 
         public ICollection<Category> Categories { get; set; } = new List<Category>();
         public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
+        public ICollection<PasswordResetToken> PasswordResetTokens { get; set; } = new List<PasswordResetToken>();
     }
 }

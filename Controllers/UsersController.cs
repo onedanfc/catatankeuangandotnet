@@ -1,10 +1,13 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CatatanKeuanganDotnet.Dtos.Auth;
+using CatatanKeuanganDotnet.Dtos.Common;
 using CatatanKeuanganDotnet.Models;
 using CatatanKeuanganDotnet.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CatatanKeuanganDotnet.Controllers
@@ -25,7 +28,11 @@ namespace CatatanKeuanganDotnet.Controllers
         public async Task<IActionResult> GetUsers(CancellationToken cancellationToken)
         {
             var users = await _userService.GetAllAsync(cancellationToken);
-            return Ok(users.Select(MapUser));
+            var data = users.Select(MapUser).ToList();
+
+            return Ok(ApiResponse<IEnumerable<UserResponse>>.Succeeded(
+                data,
+                "Daftar pengguna berhasil diambil."));
         }
 
         [HttpGet("{id:int}", Name = "GetUserById")]
@@ -34,10 +41,14 @@ namespace CatatanKeuanganDotnet.Controllers
             var user = await _userService.GetByIdAsync(id, cancellationToken);
             if (user == null)
             {
-                return NotFound();
+                return NotFound(ApiResponse.Failure(
+                    "Pengguna tidak ditemukan.",
+                    StatusCodes.Status404NotFound));
             }
 
-            return Ok(MapUser(user));
+            return Ok(ApiResponse<UserResponse>.Succeeded(
+                MapUser(user),
+                "Detail pengguna berhasil diambil."));
         }
 
         private static UserResponse MapUser(User user) => new()
