@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace CatatanKeuanganDotnet.Dtos.Categories
 {
@@ -14,6 +14,7 @@ namespace CatatanKeuanganDotnet.Dtos.Categories
         public bool IsIncome { get; set; }
 
         [Required]
-        public int UserId { get; set; }
+        [StringLength(10, MinimumLength = 1)]
+        public string UserId { get; set; } = string.Empty;
     }
 }

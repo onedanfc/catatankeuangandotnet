@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -40,6 +40,7 @@ namespace CatatanKeuanganDotnet.Services
 
             var user = new User
             {
+                Id = User.GenerateId(),
                 FullName = request.FullName.Trim(),
                 Email = normalizedEmail,
                 CreatedAt = DateTime.UtcNow,
@@ -70,7 +71,7 @@ namespace CatatanKeuanganDotnet.Services
             return verificationResult == PasswordVerificationResult.Failed ? null : user;
         }
 
-        public async Task<User?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+        public async Task<User?> GetByIdAsync(string id, CancellationToken cancellationToken = default)
         {
             return await _context.Users
                 .AsNoTracking()

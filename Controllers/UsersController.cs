@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,9 +35,16 @@ namespace CatatanKeuanganDotnet.Controllers
                 "Daftar pengguna berhasil diambil."));
         }
 
-        [HttpGet("{id:int}", Name = "GetUserById")]
-        public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+        [HttpGet("{id}", Name = "GetUserById")]
+        public async Task<IActionResult> GetById(string id, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                return BadRequest(ApiResponse.Failure(
+                    "Parameter id diperlukan.",
+                    StatusCodes.Status400BadRequest));
+            }
+
             var user = await _userService.GetByIdAsync(id, cancellationToken);
             if (user == null)
             {

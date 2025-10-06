@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace CatatanKeuanganDotnet.Dtos.Transactions
 {
@@ -9,7 +9,7 @@ namespace CatatanKeuanganDotnet.Dtos.Transactions
         public decimal Amount { get; set; }
         public DateTime Date { get; set; }
         public bool IsIncome { get; set; }
-        public int UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
         public int CategoryId { get; set; }
     }
 }

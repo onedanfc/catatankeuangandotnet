@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CatatanKeuanganDotnet.Data;
@@ -18,7 +18,7 @@ namespace CatatanKeuanganDotnet.Services
             _context = context;
         }
 
-        public async Task<IReadOnlyCollection<Transaction>> GetByUserAsync(int userId, CancellationToken cancellationToken = default)
+        public async Task<IReadOnlyCollection<Transaction>> GetByUserAsync(string userId, CancellationToken cancellationToken = default)
         {
             var transactions = await _context.Transactions
                 .AsNoTracking()

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,9 +25,9 @@ namespace CatatanKeuanganDotnet.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetByUser([FromQuery] int userId, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetByUser([FromQuery] string userId, CancellationToken cancellationToken)
         {
-            if (userId <= 0)
+            if (string.IsNullOrWhiteSpace(userId))
             {
                 return BadRequest(ApiResponse.Failure(
                     "Parameter userId diperlukan.",
