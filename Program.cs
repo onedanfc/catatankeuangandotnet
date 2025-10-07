@@ -1,4 +1,5 @@
-﻿using System.Text;
+using System.Globalization;
+using System.Text;
 using CatatanKeuanganDotnet.Data;
 using CatatanKeuanganDotnet.Models;
 using CatatanKeuanganDotnet.Options;
@@ -84,6 +85,54 @@ builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddScoped<INotificationService, EmailNotificationService>();
+
+var aiSection = configuration.GetSection("Ai");
+var aiOptions = new AiOptions
+{
+    Provider = Environment.GetEnvironmentVariable("AI_PROVIDER") ?? aiSection["Provider"] ?? "gemini",
+    BaseUrl = Environment.GetEnvironmentVariable("AI_BASE_URL") ?? aiSection["BaseUrl"] ?? "https://generativelanguage.googleapis.com/v1beta",
+    ApiKey = Environment.GetEnvironmentVariable("AI_API_KEY") ?? aiSection["ApiKey"] ?? string.Empty,
+    Model = Environment.GetEnvironmentVariable("AI_MODEL") ?? aiSection["Model"] ?? "gemini-2.0-flash",
+    ApiKeyHeaderName = Environment.GetEnvironmentVariable("AI_API_KEY_HEADER") ?? aiSection["ApiKeyHeaderName"] ?? "X-goog-api-key",
+    Organization = Environment.GetEnvironmentVariable("AI_ORGANIZATION") ?? aiSection["Organization"],
+    UseBearerPrefix = bool.TryParse(Environment.GetEnvironmentVariable("AI_USE_BEARER"), out var useBearer)
+        ? useBearer
+        : (bool.TryParse(aiSection["UseBearerPrefix"], out var configBearer) ? configBearer : false)
+};
+
+if (double.TryParse(Environment.GetEnvironmentVariable("AI_TEMPERATURE"), NumberStyles.Float, CultureInfo.InvariantCulture, out var envTemperature))
+{
+    aiOptions.Temperature = envTemperature;
+}
+else if (double.TryParse(aiSection["Temperature"], NumberStyles.Float, CultureInfo.InvariantCulture, out var configTemperature))
+{
+    aiOptions.Temperature = configTemperature;
+}
+
+if (int.TryParse(Environment.GetEnvironmentVariable("AI_MAX_TOKENS"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var envMaxTokens))
+{
+    aiOptions.MaxTokens = envMaxTokens;
+}
+else if (int.TryParse(aiSection["MaxTokens"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var configMaxTokens))
+{
+    aiOptions.MaxTokens = configMaxTokens;
+}
+
+builder.Services.Configure<AiOptions>(options =>
+{
+    options.Provider = aiOptions.Provider;
+    options.BaseUrl = aiOptions.BaseUrl;
+    options.ApiKey = aiOptions.ApiKey;
+    options.Model = aiOptions.Model;
+    options.Temperature = aiOptions.Temperature;
+    options.MaxTokens = aiOptions.MaxTokens;
+    options.Organization = aiOptions.Organization;
+    options.ApiKeyHeaderName = aiOptions.ApiKeyHeaderName;
+    options.UseBearerPrefix = aiOptions.UseBearerPrefix;
+});
+
+builder.Services.AddHttpClient<IAiClient, AiClient>();
+builder.Services.AddScoped<IAiService, AiService>();
 
 var smtpSection = configuration.GetSection("Smtp");
 var smtpOptions = new SmtpOptions
