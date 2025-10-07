@@ -12,5 +12,10 @@ namespace CatatanKeuanganDotnet.Services.Interfaces
         Task<Transaction> CreateAsync(TransactionRequest request, CancellationToken cancellationToken = default);
         Task<bool> UpdateAsync(int id, TransactionRequest request, CancellationToken cancellationToken = default);
         Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Menghasilkan rekap transaksi bulan berjalan sesuai mode pengelompokan yang diminta frontend.
+        /// </summary>
+        Task<TransactionRecapResponse> GetMonthlyRecapAsync(string userId, string groupBy, CancellationToken cancellationToken = default);
     }
 }

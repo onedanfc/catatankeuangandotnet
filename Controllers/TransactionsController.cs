@@ -42,6 +42,35 @@ namespace CatatanKeuanganDotnet.Controllers
                 "Daftar transaksi berhasil diambil."));
         }
 
+        [HttpGet("recap")]
+        public async Task<IActionResult> GetMonthlyRecap([FromQuery] string userId, [FromQuery] string? groupBy, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return BadRequest(ApiResponse.Failure(
+                    "Parameter userId diperlukan.",
+                    StatusCodes.Status400BadRequest));
+            }
+
+            // Komentar tambahan untuk tim frontend:
+            // Endpoint ini menerima query optional ?groupBy=day|week|month,
+            // default-nya day agar grafik harian langsung bisa dirender.
+            var normalizedGroupBy = NormalizeGroupBy(groupBy);
+
+            var recap = await _transactionService.GetMonthlyRecapAsync(userId, normalizedGroupBy, cancellationToken);
+
+            var message = normalizedGroupBy switch
+            {
+                "week" => "Rekap transaksi mingguan berhasil diambil.",
+                "month" => "Rekap transaksi bulanan berhasil diambil.",
+                _ => "Rekap transaksi harian berhasil diambil."
+            };
+
+            return Ok(ApiResponse<TransactionRecapResponse>.Succeeded(
+                recap,
+                message));
+        }
+
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
         {
@@ -136,5 +165,20 @@ namespace CatatanKeuanganDotnet.Controllers
             UserId = transaction.UserId,
             CategoryId = transaction.CategoryId
         };
+
+        private static string NormalizeGroupBy(string? groupBy)
+        {
+            if (string.IsNullOrWhiteSpace(groupBy))
+            {
+                return "day";
+            }
+
+            var normalized = groupBy.Trim().ToLowerInvariant();
+            return normalized switch
+            {
+                "day" or "week" or "month" => normalized,
+                _ => "day"
+            };
+        }
     }
 }
