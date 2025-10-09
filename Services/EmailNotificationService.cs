@@ -15,11 +15,16 @@ namespace CatatanKeuanganDotnet.Services
     public class EmailNotificationService : INotificationService
     {
         private readonly IOptions<SmtpOptions> _smtpOptions;
+        private readonly IOptions<PasswordResetOptions> _passwordResetOptions;
         private readonly ILogger<EmailNotificationService> _logger;
 
-        public EmailNotificationService(IOptions<SmtpOptions> smtpOptions, ILogger<EmailNotificationService> logger)
+        public EmailNotificationService(
+            IOptions<SmtpOptions> smtpOptions,
+            IOptions<PasswordResetOptions> passwordResetOptions,
+            ILogger<EmailNotificationService> logger)
         {
             _smtpOptions = smtpOptions;
+            _passwordResetOptions = passwordResetOptions;
             _logger = logger;
         }
 
@@ -34,6 +39,21 @@ namespace CatatanKeuanganDotnet.Services
             }
 
             var displayName = string.IsNullOrWhiteSpace(options.FromName) ? "Catatan Keuangan" : options.FromName;
+            var resetOptions = _passwordResetOptions.Value;
+            string? resetLink = null;
+
+            if (!string.IsNullOrWhiteSpace(resetOptions.LinkBase))
+            {
+                var trimmedBase = resetOptions.LinkBase.Trim();
+                var separator = trimmedBase.Contains("?", StringComparison.Ordinal) ? "&" : "?";
+
+                if (trimmedBase.EndsWith("?", StringComparison.Ordinal) || trimmedBase.EndsWith("&", StringComparison.Ordinal))
+                {
+                    separator = string.Empty;
+                }
+
+                resetLink = $"{trimmedBase}{separator}token={Uri.EscapeDataString(token)}";
+            }
 
             using var mailMessage = new MailMessage
             {
@@ -42,6 +62,12 @@ namespace CatatanKeuanganDotnet.Services
             };
 
             var expiryDisplay = expiresAt.ToString("dd MMM yyyy HH:mm", new CultureInfo("id-ID")) + " UTC";
+            var linkInstruction = resetLink != null
+                ? $@"Anda juga dapat membuka tautan berikut untuk langsung ke halaman reset:
+{resetLink}
+
+"
+                : string.Empty;
             var plainTextBody =
 $@"Halo,
 
@@ -50,11 +76,21 @@ Kami menerima permintaan untuk mereset password akun Anda.
 Token reset Anda: {token}
 Berlaku hingga: {expiryDisplay}
 
-Salin token di atas ke aplikasi dan ikuti langkah reset password.
+{linkInstruction}Salin token di atas ke aplikasi dan ikuti langkah reset password.
 Jika Anda tidak merasa meminta reset password, abaikan email ini.
 
 Terima kasih,
 {displayName}";
+
+            var ctaHtml = resetLink != null
+                ? $@"      <p>Klik tombol di bawah ini untuk melanjutkan reset password:</p>
+      <p><a class=""cta"" href=""{resetLink}"">Reset Password</a></p>
+      <p>Jika tombol tidak berfungsi, salin token di bawah ini secara manual.</p>"
+                : @"      <p>Salin token di bawah ini ke aplikasi dan ikuti langkah reset password.</p>";
+
+            var linkFallbackHtml = resetLink != null
+                ? $@"      <p style=""font-size:13px;color:#94a3b8;margin-top:16px;"">Jika tombol tidak berfungsi, salin tautan ini ke browser Anda: <a href=""{resetLink}"" style=""color:#2563eb;"">{resetLink}</a></p>"
+                : string.Empty;
 
             var htmlBody =
 $@"<!DOCTYPE html>
@@ -84,11 +120,13 @@ $@"<!DOCTYPE html>
     <div class=""content"">
       <p>Halo,</p>
       <p>Kami menerima permintaan untuk mereset password akun Anda.</p>
+{ctaHtml}
       <p>Gunakan token berikut untuk melanjutkan proses reset password:</p>
       <div class=""token"">{token}</div>
       <p><strong>Berlaku hingga:</strong> {expiryDisplay}</p>
       <p>Salin token di atas ke aplikasi dan ikuti langkah reset password.</p>
       <p>Jika Anda tidak merasa meminta reset password, abaikan email ini.</p>
+{linkFallbackHtml}
     </div>
     <div class=""footer"">
       <p>Terima kasih,</p>

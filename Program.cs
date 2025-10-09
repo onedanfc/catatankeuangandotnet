@@ -170,6 +170,17 @@ builder.Services.Configure<SmtpOptions>(options =>
     options.FromName = smtpOptions.FromName;
 });
 
+var passwordResetSection = configuration.GetSection("PasswordReset");
+var passwordResetOptions = new PasswordResetOptions
+{
+    LinkBase = Environment.GetEnvironmentVariable("PASSWORD_RESET_LINK_BASE") ?? passwordResetSection["LinkBase"] ?? string.Empty
+};
+
+builder.Services.Configure<PasswordResetOptions>(options =>
+{
+    options.LinkBase = passwordResetOptions.LinkBase;
+});
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
